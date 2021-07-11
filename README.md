@@ -18,13 +18,14 @@ Application takes three arguments for creating tcp server and connecting to remo
 
 - -DremoteHost=remoteServerOrIpAddress
 - -DremotePort=remoteServerPort
+- -DbindAddr=bindAddress  
 - -Dport=tcpServerPort
 
 ```
-java -DremoteHost=server.tld -DremotePort=10000 -Dport=5000 -jar tcp-proxy.jar
+java -DremoteHost=server.tld -DremotePort=10000 -DbindAddr=0.0.0.0 -Dport=5000 -jar tcp-proxy.jar
 ```
 
-In the above example application accepts connection on `5000` port and forwards request to server.tld:10000 and also send server.tld:10000's responses to client
+In the above example application accepts connection on `5000` port on 0.0.0.0 and forwards request to server.tld:10000 and also send server.tld:10000's responses to client
 
 ### Docker Build
 

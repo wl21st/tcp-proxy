@@ -3,6 +3,7 @@ package com.yunusoksuz.tcpproxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -16,16 +17,18 @@ public class TcpIpProxy {
     private final String remoteIp;
     private final int remotePort;
     private final int port;
+    private final InetAddress bindAddr;
 
-    public TcpIpProxy(String remoteIp, int remotePort, int port) {
+    public TcpIpProxy(String remoteIp, int remotePort, InetAddress bindAddr, int port) {
         this.remoteIp = remoteIp;
         this.remotePort = remotePort;
+        this.bindAddr = bindAddr;
         this.port = port;
     }
 
     public void listen() {
         try {
-            ServerSocket serverSocket = new ServerSocket(port);
+            ServerSocket serverSocket = new ServerSocket(port, 100, bindAddr);
             LOGGER.info("listening...");
             while (true) {
                 Socket socket = serverSocket.accept();
