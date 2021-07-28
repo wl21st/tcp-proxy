@@ -5,61 +5,65 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by oksuz on 29/10/2017.
  */
 public class Connection implements Runnable {
 
-    private final Socket clientsocket;
+    private final Socket clientSocket;
     private final String remoteIp;
     private final int remotePort;
-    private Socket serverConnection = null;
+
+    private Socket serverSocket = null;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Connection.class);
 
-    public Connection(Socket clientsocket, String remoteIp, int remotePort) {
-        this.clientsocket = clientsocket;
+    public Connection(Socket clientSocket, String remoteIp, int remotePort) {
+        this.clientSocket = clientSocket;
         this.remoteIp = remoteIp;
         this.remotePort = remotePort;
     }
 
     @Override
     public void run() {
-        LOGGER.info("new connection {}:{}", clientsocket.getInetAddress().getHostName(), clientsocket.getPort());
+        LOGGER.info("new connection {}:{}", clientSocket.getInetAddress().getHostName(), clientSocket.getPort());
         try {
-            serverConnection = new Socket(remoteIp, remotePort);
+            serverSocket = new Socket(remoteIp, remotePort);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("IOException!", e);
             return;
         }
 
-        LOGGER.info("Proxy {}:{} <-> {}:{}", clientsocket.getInetAddress().getHostName(), clientsocket.getPort(), serverConnection.getInetAddress().getHostName(), serverConnection.getPort());
+        LOGGER.info("Proxy {}:{} <-> {}:{}", clientSocket.getInetAddress().getHostName(), clientSocket.getPort(), serverSocket.getInetAddress().getHostName(), serverSocket.getPort());
 
-        new Thread(new Proxy(clientsocket, serverConnection)).start();
-        new Thread(new Proxy(serverConnection, clientsocket)).start();
+        new Thread(new Proxy(clientSocket, serverSocket)).start();
+        new Thread(new Proxy(serverSocket, clientSocket)).start();
         new Thread(() -> {
             while (true) {
-                if (clientsocket.isClosed()) {
-                    LOGGER.info("client socket ({}:{}) closed", clientsocket.getInetAddress().getHostName(), clientsocket.getPort());
+                if (clientSocket.isClosed()) {
+                    LOGGER.info("client socket ({}:{}) closed", clientSocket.getInetAddress().getHostName(), clientSocket.getPort());
                     closeServerConnection();
                     break;
                 }
 
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {}
+                    TimeUnit.MILLISECONDS.sleep(1000L);
+                } catch (InterruptedException e) {
+                    LOGGER.warn(String.format("Thread interrupted for connection connection %s:%s", serverSocket.getInetAddress().getHostName(), serverSocket.getPort()), e);
+                }
             }
         }).start();
     }
 
     private void closeServerConnection() {
-        if (serverConnection != null && !serverConnection.isClosed()) {
+        if (serverSocket != null && !serverSocket.isClosed()) {
             try {
-                LOGGER.info("closing remote host connection {}:{}", serverConnection.getInetAddress().getHostName(), serverConnection.getPort());
-                serverConnection.close();
+                LOGGER.info("closing remote host connection {}:{}", serverSocket.getInetAddress().getHostName(), serverSocket.getPort());
+                serverSocket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                // Close silently
             }
         }
     }

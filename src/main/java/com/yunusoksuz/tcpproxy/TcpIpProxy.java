@@ -29,6 +29,7 @@ public class TcpIpProxy {
     public void listen() {
         try {
             ServerSocket serverSocket = new ServerSocket(port, 100, bindAddr);
+//            ServerSocket serverSocket = new ServerSocket(port);
             LOGGER.info("listening...");
             while (true) {
                 Socket socket = serverSocket.accept();
