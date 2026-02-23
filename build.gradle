@@ -1,41 +1,36 @@
-group 'com.yunusoksuz'
-version '1.0-SNAPSHOT'
+plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'com.gradleup.shadow' version '9.0.0-beta4'
+}
+
+group = 'com.yunusoksuz'
+version = '1.0-SNAPSHOT'
 
 def mainClassName = 'com.yunusoksuz.tcpproxy.AppMain'
 import org.apache.tools.ant.filters.ReplaceTokens
 
 def port = project.hasProperty("port") ? project.property("port") : '5000'
 
-buildscript {
-    repositories {
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
-
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-apply plugin: 'maven'
-apply plugin: 'com.github.johnrengelman.shadow'
-
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile 'org.slf4j:slf4j-simple:1.7.25'
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    implementation 'org.slf4j:slf4j-simple:1.7.25'
+    testImplementation group: 'junit', name: 'junit', version: '4.11'
 }
 
-task replacePort(type: Copy) {
+tasks.register('replacePort', Copy) {
     from('.') {
         include 'Dockerfile.dist'
         rename 'Dockerfile.dist', 'Dockerfile'
@@ -44,11 +39,15 @@ task replacePort(type: Copy) {
     into('.')
 }
 
+tasks.named('compileJava').configure { mustRunAfter('replacePort') }
+tasks.named('processResources').configure { mustRunAfter('replacePort') }
+tasks.findByName('processTestResources')?.mustRunAfter('replacePort')
+tasks.named('jar').configure { mustRunAfter('replacePort') }
 
 shadowJar {
-    baseName = 'tcp-proxy'
-    classifier = null
-    version = null
+    archiveBaseName = 'tcp-proxy'
+    archiveClassifier = ''
+    archiveVersion = ''
     manifest {
         attributes 'Main-Class': mainClassName
     }
